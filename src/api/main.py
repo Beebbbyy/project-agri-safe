@@ -133,7 +133,7 @@ async def health_check():
 API_V1_PREFIX = "/api/v1"
 
 # Import routers
-from src.api.routers import auth, regions, crops
+from src.api.routers import auth, regions, crops, weather
 
 # Include routers
 app.include_router(
@@ -150,6 +150,11 @@ app.include_router(
     crops.router,
     prefix=f"{API_V1_PREFIX}/crops",
     tags=["Crops"]
+)
+app.include_router(
+    weather.router,
+    prefix=f"{API_V1_PREFIX}/weather",
+    tags=["Weather"]
 )
 
 

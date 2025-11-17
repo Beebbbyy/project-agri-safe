@@ -126,22 +126,21 @@ def read_postgres_table(
 
     logger.info(f"Reading table: {table}")
 
-    reader = spark.read.jdbc(
-        url=jdbc_url,
-        table=table,
-        properties=properties
-    )
-
     # Use predicates for parallel reading if provided
     if predicates:
-        reader = spark.read.jdbc(
+        df = spark.read.jdbc(
             url=jdbc_url,
             table=table,
             properties=properties,
             predicates=predicates
         )
+    else:
+        df = spark.read.jdbc(
+            url=jdbc_url,
+            table=table,
+            properties=properties
+        )
 
-    df = reader.load()
     logger.info(f"Loaded {df.count()} rows from {table}")
 
     return df

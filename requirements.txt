@@ -8,7 +8,8 @@ python-multipart==0.0.6
 
 # Database
 psycopg2-binary==2.9.9
-SQLAlchemy==1.4.52
+SQLAlchemy==2.0.25
+asyncpg==0.29.0
 alembic==1.13.1
 
 # Data Processing
@@ -36,10 +37,13 @@ httpx==0.26.0
 
 # Caching
 redis==5.0.1
+aiocache==0.12.2
 
-# Data Validation
+# Data Validation & Security
 pydantic==2.5.3
 pydantic-settings==2.1.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
 
 # Visualization
 plotly==5.18.0
@@ -57,7 +61,10 @@ apache-airflow-providers-postgres==5.10.0
 
 # Development & Testing
 pytest==7.4.4
+pytest-asyncio==0.23.3
 pytest-cov==4.1.0
+factory-boy==3.3.0
+locust==2.20.0
 black==24.1.1
 flake8==7.0.0
 mypy==1.8.0

@@ -83,10 +83,13 @@ services:
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
       - ./data:/opt/airflow/data
+      - ./src:/opt/airflow/src
+      - ./requirements.txt:/opt/airflow/requirements.txt
     ports:
       - "8080:8080"
     command: >
-      bash -c "airflow db migrate &&
+      bash -c "pip install --no-cache-dir -r /opt/airflow/requirements.txt &&
+               airflow db migrate &&
                airflow users create --username $${_AIRFLOW_WWW_USER_USERNAME} --firstname Admin --lastname User --role Admin --email admin@example.com --password $${_AIRFLOW_WWW_USER_PASSWORD} || true &&
                airflow webserver"
     healthcheck:
@@ -117,7 +120,11 @@ services:
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
       - ./data:/opt/airflow/data
-    command: airflow scheduler
+      - ./src:/opt/airflow/src
+      - ./requirements.txt:/opt/airflow/requirements.txt
+    command: >
+      bash -c "pip install --no-cache-dir -r /opt/airflow/requirements.txt &&
+               airflow scheduler"
     healthcheck:
       test: ["CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob"]
       interval: 30s
@@ -141,12 +148,21 @@ services:
       AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-fb8Wa0aVcPZr8Y4fq3tN8yK2J5LqR9xM1wH7jB6eC4s=}
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: agrisafe_db
+      POSTGRES_USER: agrisafe
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrisafe_password}
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
       - ./data:/opt/airflow/data
-    command: airflow celery worker
+      - ./src:/opt/airflow/src
+      - ./requirements.txt:/opt/airflow/requirements.txt
+    command: >
+      bash -c "pip install --no-cache-dir -r /opt/airflow/requirements.txt &&
+               airflow celery worker"
     healthcheck:
       test: ["CMD", "airflow", "celery", "check"]
       interval: 30s

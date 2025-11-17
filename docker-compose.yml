@@ -171,6 +171,88 @@ services:
     networks:
       - agrisafe-network
 
+  # Apache Spark - Master Node
+  spark-master:
+    build:
+      context: ./docker/spark
+      dockerfile: Dockerfile
+    container_name: agrisafe-spark-master
+    hostname: spark-master
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_MASTER_WEBUI_PORT=8081
+      - SPARK_MASTER_HOST=spark-master
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-agrisafe_db}
+      - POSTGRES_USER=${POSTGRES_USER:-agrisafe}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-agrisafe_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "7077:7077"   # Spark master port
+      - "8081:8081"   # Spark master web UI
+      - "4040:4040"   # Spark application UI
+    volumes:
+      - ./src:/opt/spark/work/src
+      - ./data:/opt/spark/work/data
+      - ./models:/opt/spark/work/models
+      - ./airflow/logs:/opt/spark/work/logs
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8081"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - agrisafe-network
+
+  # Apache Spark - Worker Node
+  spark-worker:
+    build:
+      context: ./docker/spark
+      dockerfile: Dockerfile
+    container_name: agrisafe-spark-worker
+    hostname: spark-worker
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_PORT=8082
+      - SPARK_WORKER_WEBUI_PORT=8083
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-agrisafe_db}
+      - POSTGRES_USER=${POSTGRES_USER:-agrisafe}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-agrisafe_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "8083:8083"   # Spark worker web UI
+    volumes:
+      - ./src:/opt/spark/work/src
+      - ./data:/opt/spark/work/data
+      - ./models:/opt/spark/work/models
+      - ./airflow/logs:/opt/spark/work/logs
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8083"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - agrisafe-network
+
   # FastAPI Backend (commented out for Phase 1, will be added in Phase 4)
   # backend:
   #   build:

@@ -240,34 +240,59 @@ class DailyWeatherStatsJob:
             records_created: Number of records created
             error_message: Error message if failed
         """
-        from pyspark.sql import Row
-
         duration_seconds = int((end_time - start_time).total_seconds())
 
-        metadata = Row(
-            id=None,  # Will be generated
-            job_name=self.job_name,
-            job_type="daily_stats",
-            start_time=start_time,
-            end_time=end_time,
-            duration_seconds=duration_seconds,
-            status=status,
-            records_processed=records_processed,
-            records_created=records_created,
-            records_updated=0,
-            records_failed=0,
-            date_from=None,
-            date_to=None,
-            error_message=error_message,
-            error_traceback=None,
-            spark_app_id=self.spark.sparkContext.applicationId,
-            executor_memory="2g",
-            driver_memory="2g",
-            created_at=datetime.now()
+        # Create metadata as a list of tuples with proper types
+        metadata_data = [(
+            self.job_name,
+            "daily_stats",
+            start_time,
+            end_time,
+            duration_seconds,
+            status,
+            records_processed,
+            records_created,
+            0,  # records_updated
+            0,  # records_failed
+            None,  # date_from
+            None,  # date_to
+            error_message,
+            None,  # error_traceback
+            self.spark.sparkContext.applicationId,
+            "2g",  # executor_memory
+            "2g",  # driver_memory
+            datetime.now()
+        )]
+
+        # Define schema explicitly to avoid type inference issues
+        from pyspark.sql.types import (
+            StructType, StructField, StringType, TimestampType,
+            IntegerType
         )
 
-        # Create DataFrame with single row
-        metadata_df = self.spark.createDataFrame([metadata])
+        schema = StructType([
+            StructField("job_name", StringType(), False),
+            StructField("job_type", StringType(), False),
+            StructField("start_time", TimestampType(), False),
+            StructField("end_time", TimestampType(), True),
+            StructField("duration_seconds", IntegerType(), True),
+            StructField("status", StringType(), True),
+            StructField("records_processed", IntegerType(), True),
+            StructField("records_created", IntegerType(), True),
+            StructField("records_updated", IntegerType(), True),
+            StructField("records_failed", IntegerType(), True),
+            StructField("date_from", StringType(), True),
+            StructField("date_to", StringType(), True),
+            StructField("error_message", StringType(), True),
+            StructField("error_traceback", StringType(), True),
+            StructField("spark_app_id", StringType(), True),
+            StructField("executor_memory", StringType(), True),
+            StructField("driver_memory", StringType(), True),
+            StructField("created_at", TimestampType(), True),
+        ])
+
+        # Create DataFrame with explicit schema
+        metadata_df = self.spark.createDataFrame(metadata_data, schema)
 
         # Save to database
         write_postgres_table(metadata_df, "feature_metadata", mode="append")

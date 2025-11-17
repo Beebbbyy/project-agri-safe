@@ -195,15 +195,14 @@ class DailyWeatherStatsJob:
 
         logger.info("Caching results in Redis...")
 
-        # Convert to Pandas for easier iteration (for small datasets)
-        # For production, consider bulk operations or skip caching individual records
-        pandas_df = df.select(
+        # Use Spark collect() instead of toPandas() to avoid distutils dependency
+        rows = df.select(
             "region_id", "stat_date",
             "temp_avg", "rainfall_total", "wind_speed_avg", "humidity_avg"
-        ).toPandas()
+        ).collect()
 
         cached_count = 0
-        for _, row in pandas_df.iterrows():
+        for row in rows:
             stats = {
                 "temp_avg": float(row["temp_avg"]) if row["temp_avg"] else None,
                 "rainfall_total": float(row["rainfall_total"]) if row["rainfall_total"] else None,

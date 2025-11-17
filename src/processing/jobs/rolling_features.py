@@ -335,14 +335,15 @@ class RollingFeaturesJob:
         logger.info("Caching rolling features in Redis...")
 
         # Cache only latest features for each region and window
-        latest_features = df.select(
+        # Use Spark collect() instead of toPandas() to avoid distutils dependency
+        rows = df.select(
             "region_id", "window_days", "feature_date",
             "rainfall_rolling_sum", "rainfall_heavy_days",
             "temp_rolling_avg", "consecutive_rain_days"
-        ).toPandas()
+        ).collect()
 
         cached_count = 0
-        for _, row in latest_features.iterrows():
+        for row in rows:
             features = {
                 "rainfall_sum": float(row["rainfall_rolling_sum"]) if row["rainfall_rolling_sum"] else None,
                 "heavy_rain_days": int(row["rainfall_heavy_days"]) if row["rainfall_heavy_days"] else 0,

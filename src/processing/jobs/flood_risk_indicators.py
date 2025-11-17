@@ -301,15 +301,16 @@ class FloodRiskIndicatorsJob:
         logger.info("Caching risk indicators in Redis...")
 
         # Cache latest indicators for each region
-        latest_indicators = df.select(
+        # Use Spark collect() instead of toPandas() to avoid distutils dependency
+        rows = df.select(
             "region_id", "indicator_date",
             "flood_risk_score", "flood_risk_level",
             "cumulative_rainfall_7d", "is_high_risk", "is_critical_risk",
             "alert_message"
-        ).toPandas()
+        ).collect()
 
         cached_count = 0
-        for _, row in latest_indicators.iterrows():
+        for row in rows:
             indicators = {
                 "risk_score": float(row["flood_risk_score"]) if row["flood_risk_score"] else None,
                 "risk_level": str(row["flood_risk_level"]),

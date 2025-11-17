@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from typing import List
 from functools import lru_cache
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -43,12 +44,16 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # CORS
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:8501",  # Streamlit default
-        "http://localhost:8000"
-    ]
+    # CORS - accepts comma-separated string from env vars
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8501", "http://localhost:8000"]
+
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse CORS origins from comma-separated string or list"""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(',')]
+        return v
 
     # LLM Configuration
     OPENAI_API_KEY: str | None = None

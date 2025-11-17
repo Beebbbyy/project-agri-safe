@@ -1,4 +1,7 @@
 # Project Agri-Safe - Python Dependencies
+#
+# Note: This file contains dependencies for Airflow, Spark, and development.
+# The FastAPI backend uses requirements-api.txt to avoid dependency conflicts.
 
 # Web Framework
 streamlit==1.29.0

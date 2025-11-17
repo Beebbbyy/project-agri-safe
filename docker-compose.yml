@@ -253,26 +253,61 @@ services:
     networks:
       - agrisafe-network
 
-  # FastAPI Backend (commented out for Phase 1, will be added in Phase 4)
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: agrisafe-backend
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   environment:
-  #     DATABASE_URL: postgresql://${POSTGRES_USER:-agrisafe}:${POSTGRES_PASSWORD:-agrisafe_password}@postgres:5432/${POSTGRES_DB:-agrisafe_db}
-  #     REDIS_URL: redis://redis:6379/0
-  #   ports:
-  #     - "8000:8000"
-  #   volumes:
-  #     - ./backend:/app
-  #   networks:
-  #     - agrisafe-network
+  # FastAPI Backend (Phase 4)
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    container_name: agrisafe-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Database
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-agrisafe_db}
+      POSTGRES_USER: ${POSTGRES_USER:-agrisafe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrisafe_password}
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      REDIS_PASSWORD: ""
+      # Application
+      DEBUG: ${DEBUG:-False}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      # LLM
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4-turbo-preview}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.7}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-1000}
+      # Cache TTL
+      CACHE_TTL_WEATHER: ${CACHE_TTL_WEATHER:-3600}
+      CACHE_TTL_FORECAST: ${CACHE_TTL_FORECAST:-21600}
+      CACHE_TTL_LLM: ${CACHE_TTL_LLM:-1800}
+      # Authentication
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      # CORS
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8501,http://localhost:3000}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - agrisafe-network
+    restart: unless-stopped
 
   # Streamlit Frontend (commented out for Phase 1, will be added in Phase 5)
   # frontend:

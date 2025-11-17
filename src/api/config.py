@@ -44,16 +44,15 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # CORS - accepts comma-separated string from env vars
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8501", "http://localhost:8000"]
+    # CORS - comma-separated string that will be parsed to list
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8501,http://localhost:8000"
 
-    @field_validator('CORS_ORIGINS', mode='before')
-    @classmethod
-    def parse_cors_origins(cls, v):
-        """Parse CORS origins from comma-separated string or list"""
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(',')]
-        return v
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Parse CORS origins string into a list"""
+        if isinstance(self.CORS_ORIGINS, str):
+            return [origin.strip() for origin in self.CORS_ORIGINS.split(',')]
+        return self.CORS_ORIGINS
 
     # LLM Configuration
     OPENAI_API_KEY: str | None = None

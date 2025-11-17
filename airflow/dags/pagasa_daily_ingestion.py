@@ -16,7 +16,7 @@ from airflow.operators.bash import BashOperator
 from airflow.utils.dates import days_ago
 
 # Add src directory to Python path
-project_root = Path(__file__).parent.parent.parent
+project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.ingestion.pagasa_connector import PAGASAIngestionService

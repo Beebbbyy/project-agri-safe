@@ -47,7 +47,10 @@ venv.bak/
 # Database
 *.db
 *.sqlite3
-*.sql
+# Allow schema and seed SQL files
+!sql/schema/*.sql
+!sql/migrations/*.sql
+!sql/seeds/*.sql
 
 # Logs
 logs/

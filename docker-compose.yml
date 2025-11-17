@@ -1,0 +1,203 @@
+version: '3.8'
+
+services:
+  # PostgreSQL - Main Application Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: agrisafe-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-agrisafe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrisafe_password}
+      POSTGRES_DB: ${POSTGRES_DB:-agrisafe_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/schema:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agrisafe}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agrisafe-network
+
+  # Redis - Caching and Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: agrisafe-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agrisafe-network
+
+  # PostgreSQL for Airflow Metadata
+  airflow-postgres:
+    image: postgres:15-alpine
+    container_name: agrisafe-airflow-postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agrisafe-network
+
+  # Apache Airflow - Webserver
+  airflow-webserver:
+    image: apache/airflow:2.8.0-python3.11
+    container_name: agrisafe-airflow-webserver
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-fb8Wa0aVcPZr8Y4fq3tN8yK2J5LqR9xM1wH7jB6eC4s=}
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-your-secret-key-here}
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_USERNAME:-admin}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_PASSWORD:-admin}
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data:/opt/airflow/data
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "airflow db migrate &&
+               airflow users create --username $${_AIRFLOW_WWW_USER_USERNAME} --firstname Admin --lastname User --role Admin --email admin@example.com --password $${_AIRFLOW_WWW_USER_PASSWORD} || true &&
+               airflow webserver"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - agrisafe-network
+
+  # Apache Airflow - Scheduler
+  airflow-scheduler:
+    image: apache/airflow:2.8.0-python3.11
+    container_name: agrisafe-airflow-scheduler
+    depends_on:
+      airflow-webserver:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-fb8Wa0aVcPZr8Y4fq3tN8yK2J5LqR9xM1wH7jB6eC4s=}
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data:/opt/airflow/data
+    command: airflow scheduler
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - agrisafe-network
+
+  # Apache Airflow - Worker
+  airflow-worker:
+    image: apache/airflow:2.8.0-python3.11
+    container_name: agrisafe-airflow-worker
+    depends_on:
+      airflow-webserver:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-fb8Wa0aVcPZr8Y4fq3tN8yK2J5LqR9xM1wH7jB6eC4s=}
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data:/opt/airflow/data
+    command: airflow celery worker
+    healthcheck:
+      test: ["CMD", "airflow", "celery", "check"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - agrisafe-network
+
+  # FastAPI Backend (commented out for Phase 1, will be added in Phase 4)
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: agrisafe-backend
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   environment:
+  #     DATABASE_URL: postgresql://${POSTGRES_USER:-agrisafe}:${POSTGRES_PASSWORD:-agrisafe_password}@postgres:5432/${POSTGRES_DB:-agrisafe_db}
+  #     REDIS_URL: redis://redis:6379/0
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./backend:/app
+  #   networks:
+  #     - agrisafe-network
+
+  # Streamlit Frontend (commented out for Phase 1, will be added in Phase 5)
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: agrisafe-frontend
+  #   depends_on:
+  #     - backend
+  #   environment:
+  #     BACKEND_URL: http://backend:8000
+  #   ports:
+  #     - "8501:8501"
+  #   volumes:
+  #     - ./frontend:/app
+  #   networks:
+  #     - agrisafe-network
+
+networks:
+  agrisafe-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  airflow_postgres_data:

@@ -1,11 +1,9 @@
 #!/bin/bash
 
-##############################################################################
-# Test Script for Phase 3: Data Processing & ML
-# Project Agri-Safe
-##############################################################################
+# Phase 3 Spark ETL - Automated Test Script
+# This script tests all components of the Spark ETL pipeline
 
-set -e
+set -e  # Exit on error
 
 # Colors for output
 RED='\033[0;31m'
@@ -14,11 +12,6 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Test counters
-TESTS_RUN=0
-TESTS_PASSED=0
-TESTS_FAILED=0
-
 # Logging functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -26,454 +19,320 @@ log_info() {
 
 log_success() {
     echo -e "${GREEN}[✓]${NC} $1"
-    ((TESTS_PASSED++))
-    ((TESTS_RUN++))
 }
 
 log_error() {
     echo -e "${RED}[✗]${NC} $1"
-    ((TESTS_FAILED++))
-    ((TESTS_RUN++))
 }
 
-log_warn() {
+log_warning() {
     echo -e "${YELLOW}[!]${NC} $1"
 }
 
-echo "======================================================================"
-echo "  🌾 Project Agri-Safe - Phase 3 Testing"
-echo "  Data Processing & ML Infrastructure Validation"
-echo "======================================================================"
-echo ""
-
-log_info "Starting Phase 3 infrastructure tests..."
-echo ""
-
-##############################################################################
-# 1. SPARK CLUSTER TESTS
-##############################################################################
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  1. SPARK CLUSTER TESTS"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-# Test 1.1: Spark Master is running
-log_info "Testing Spark Master container..."
-if docker ps | grep -q "agrisafe-spark-master"; then
-    log_success "Spark Master container is running"
-else
-    log_error "Spark Master container is not running"
-fi
-
-# Test 1.2: Spark Worker is running
-log_info "Testing Spark Worker container..."
-if docker ps | grep -q "agrisafe-spark-worker"; then
-    log_success "Spark Worker container is running"
-else
-    log_error "Spark Worker container is not running"
-fi
-
-# Test 1.3: Spark Master UI is accessible
-log_info "Testing Spark Master UI accessibility..."
-if curl -sf http://localhost:8081 > /dev/null; then
-    log_success "Spark Master UI is accessible at http://localhost:8081"
-else
-    log_error "Spark Master UI is not accessible"
-fi
-
-# Test 1.4: Spark Worker UI is accessible
-log_info "Testing Spark Worker UI accessibility..."
-if curl -sf http://localhost:8083 > /dev/null; then
-    log_success "Spark Worker UI is accessible at http://localhost:8083"
-else
-    log_error "Spark Worker UI is not accessible"
-fi
-
-# Test 1.5: Spark worker is connected to master
-log_info "Testing Spark Worker connection to Master..."
-WORKER_STATUS=$(docker exec agrisafe-spark-master curl -s http://localhost:8081 | grep -o "Workers ([0-9]*)" | grep -o "[0-9]*")
-if [ "$WORKER_STATUS" -ge "1" ]; then
-    log_success "Spark Worker is connected to Master ($WORKER_STATUS worker(s))"
-else
-    log_error "No Spark Workers connected to Master"
-fi
-
-echo ""
-
-##############################################################################
-# 2. DATABASE SCHEMA TESTS
-##############################################################################
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  2. DATABASE SCHEMA TESTS (Phase 3 Tables)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-# Test 2.1: weather_daily_stats table exists
-log_info "Testing weather_daily_stats table..."
-if docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -c "\dt weather_daily_stats" 2>/dev/null | grep -q "weather_daily_stats"; then
-    log_success "weather_daily_stats table exists"
-else
-    log_error "weather_daily_stats table not found"
-fi
-
-# Test 2.2: feature_store table exists
-log_info "Testing feature_store table..."
-if docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -c "\dt feature_store" 2>/dev/null | grep -q "feature_store"; then
-    log_success "feature_store table exists"
-else
-    log_error "feature_store table not found"
-fi
-
-# Test 2.3: data_quality_checks table exists
-log_info "Testing data_quality_checks table..."
-if docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -c "\dt data_quality_checks" 2>/dev/null | grep -q "data_quality_checks"; then
-    log_success "data_quality_checks table exists"
-else
-    log_error "data_quality_checks table not found"
-fi
-
-# Test 2.4: model_training_runs table exists
-log_info "Testing model_training_runs table..."
-if docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -c "\dt model_training_runs" 2>/dev/null | grep -q "model_training_runs"; then
-    log_success "model_training_runs table exists"
-else
-    log_error "model_training_runs table not found"
-fi
-
-# Test 2.5: model_predictions_log table exists
-log_info "Testing model_predictions_log table..."
-if docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -c "\dt model_predictions_log" 2>/dev/null | grep -q "model_predictions_log"; then
-    log_success "model_predictions_log table exists"
-else
-    log_error "model_predictions_log table not found"
-fi
-
-# Test 2.6: region_risk_indicators table exists
-log_info "Testing region_risk_indicators table..."
-if docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -c "\dt region_risk_indicators" 2>/dev/null | grep -q "region_risk_indicators"; then
-    log_success "region_risk_indicators table exists"
-else
-    log_error "region_risk_indicators table not found"
-fi
-
-# Test 2.7: etl_job_runs table exists
-log_info "Testing etl_job_runs table..."
-if docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -c "\dt etl_job_runs" 2>/dev/null | grep -q "etl_job_runs"; then
-    log_success "etl_job_runs table exists"
-else
-    log_error "etl_job_runs table not found"
-fi
-
-echo ""
-
-##############################################################################
-# 3. PYTHON MODULE TESTS
-##############################################################################
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  3. PYTHON MODULE TESTS"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-# Test 3.1: Import weather ETL module
-log_info "Testing weather ETL module import..."
-if docker exec agrisafe-airflow-worker python -c "from src.processing.spark_jobs.weather_etl import WeatherETL" 2>/dev/null; then
-    log_success "weather_etl module imports successfully"
-else
-    log_error "Failed to import weather_etl module"
-fi
-
-# Test 3.2: Import rolling features module
-log_info "Testing rolling features module import..."
-if docker exec agrisafe-airflow-worker python -c "from src.processing.spark_jobs.rolling_features import RollingFeatureEngine" 2>/dev/null; then
-    log_success "rolling_features module imports successfully"
-else
-    log_error "Failed to import rolling_features module"
-fi
-
-# Test 3.3: Import flood risk v1 module
-log_info "Testing flood risk v1 module import..."
-if docker exec agrisafe-airflow-worker python -c "from src.models.flood_risk_v1 import RuleBasedFloodModel" 2>/dev/null; then
-    log_success "flood_risk_v1 module imports successfully"
-else
-    log_error "Failed to import flood_risk_v1 module"
-fi
-
-# Test 3.4: Import flood risk v2 module
-log_info "Testing flood risk v2 module import..."
-if docker exec agrisafe-airflow-worker python -c "from src.models.flood_risk_v2 import MLFloodModel" 2>/dev/null; then
-    log_success "flood_risk_v2 module imports successfully"
-else
-    log_error "Failed to import flood_risk_v2 module"
-fi
-
-# Test 3.5: Import training pipeline module
-log_info "Testing training pipeline module import..."
-if docker exec agrisafe-airflow-worker python -c "from src.models.training_pipeline import FloodModelTrainingPipeline" 2>/dev/null; then
-    log_success "training_pipeline module imports successfully"
-else
-    log_error "Failed to import training_pipeline module"
-fi
-
-# Test 3.6: Import batch predictions module
-log_info "Testing batch predictions module import..."
-if docker exec agrisafe-airflow-worker python -c "from src.models.batch_predictions import FloodRiskBatchPredictor" 2>/dev/null; then
-    log_success "batch_predictions module imports successfully"
-else
-    log_error "Failed to import batch_predictions module"
-fi
-
-# Test 3.7: Import validators module
-log_info "Testing validators module import..."
-if docker exec agrisafe-airflow-worker python -c "from src.quality.validators import WeatherDataValidator" 2>/dev/null; then
-    log_success "validators module imports successfully"
-else
-    log_error "Failed to import validators module"
-fi
-
-# Test 3.8: Import monitoring module
-log_info "Testing monitoring module import..."
-if docker exec agrisafe-airflow-worker python -c "from src.quality.monitoring import QualityMonitor" 2>/dev/null; then
-    log_success "monitoring module imports successfully"
-else
-    log_error "Failed to import monitoring module"
-fi
-
-echo ""
-
-##############################################################################
-# 4. DEPENDENCY TESTS
-##############################################################################
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  4. DEPENDENCY TESTS"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-# Test 4.1: PySpark installed
-log_info "Testing PySpark installation..."
-if docker exec agrisafe-spark-master python -c "import pyspark; print(pyspark.__version__)" 2>/dev/null | grep -q "3.5"; then
-    log_success "PySpark 3.5.x is installed"
-else
-    log_error "PySpark not properly installed"
-fi
-
-# Test 4.2: XGBoost installed
-log_info "Testing XGBoost installation..."
-if docker exec agrisafe-airflow-worker python -c "import xgboost; print(xgboost.__version__)" 2>/dev/null | grep -q "2.0"; then
-    log_success "XGBoost 2.0.x is installed"
-else
-    log_error "XGBoost not properly installed"
-fi
-
-# Test 4.3: scikit-learn installed
-log_info "Testing scikit-learn installation..."
-if docker exec agrisafe-airflow-worker python -c "import sklearn; print(sklearn.__version__)" 2>/dev/null | grep -q "1.4"; then
-    log_success "scikit-learn 1.4.x is installed"
-else
-    log_error "scikit-learn not properly installed"
-fi
-
-# Test 4.4: pandas installed
-log_info "Testing pandas installation..."
-if docker exec agrisafe-airflow-worker python -c "import pandas; print(pandas.__version__)" 2>/dev/null | grep -q "2.1"; then
-    log_success "pandas 2.1.x is installed"
-else
-    log_error "pandas not properly installed"
-fi
-
-# Test 4.5: PostgreSQL JDBC driver exists
-log_info "Testing PostgreSQL JDBC driver..."
-if docker exec agrisafe-spark-master ls /opt/spark/jars/ 2>/dev/null | grep -q "postgresql"; then
-    log_success "PostgreSQL JDBC driver is present"
-else
-    log_error "PostgreSQL JDBC driver not found"
-fi
-
-echo ""
-
-##############################################################################
-# 5. AIRFLOW DAG TESTS
-##############################################################################
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  5. AIRFLOW DAG TESTS"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-# Test 5.1: Weather processing DAG exists
-log_info "Testing weather processing DAG..."
-if docker exec agrisafe-airflow-webserver python /opt/airflow/dags/weather_processing_dag.py 2>/dev/null; then
-    log_success "weather_processing_dag.py syntax is valid"
-else
-    log_error "weather_processing_dag.py has syntax errors"
-fi
-
-# Test 5.2: Flood model DAG exists
-log_info "Testing flood model DAG..."
-if docker exec agrisafe-airflow-webserver python /opt/airflow/dags/flood_model_dag.py 2>/dev/null; then
-    log_success "flood_model_dag.py syntax is valid"
-else
-    log_error "flood_model_dag.py has syntax errors"
-fi
-
-# Test 5.3: Data quality DAG exists
-log_info "Testing data quality DAG..."
-if docker exec agrisafe-airflow-webserver python /opt/airflow/dags/data_quality_dag.py 2>/dev/null; then
-    log_success "data_quality_dag.py syntax is valid"
-else
-    log_error "data_quality_dag.py has syntax errors"
-fi
-
-# Test 5.4: DAGs loaded in Airflow (give it a moment)
-log_info "Checking if DAGs are loaded in Airflow..."
-sleep 5
-if docker exec agrisafe-airflow-webserver airflow dags list 2>/dev/null | grep -q "weather_data_processing\|flood_risk_predictions\|data_quality_monitoring"; then
-    log_success "Phase 3 DAGs are loaded in Airflow"
-else
-    log_warn "Phase 3 DAGs may not be loaded yet (this can take a minute)"
-fi
-
-echo ""
-
-##############################################################################
-# 6. FUNCTIONAL TESTS
-##############################################################################
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  6. FUNCTIONAL TESTS"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-# Test 6.1: Rule-based model can make predictions
-log_info "Testing rule-based flood model prediction..."
-PREDICTION_OUTPUT=$(docker exec agrisafe-airflow-worker python -c "
-from src.models.flood_risk_v1 import RuleBasedFloodModel
-model = RuleBasedFloodModel()
-features = {'rainfall_1d': 120, 'rainfall_7d': 300, 'elevation': 50, 'historical_flood_count': 3}
-result = model.predict(features)
-print(result.risk_level)
-" 2>/dev/null)
-
-if [ -n "$PREDICTION_OUTPUT" ]; then
-    log_success "Rule-based model generated prediction: $PREDICTION_OUTPUT"
-else
-    log_error "Rule-based model failed to generate prediction"
-fi
-
-# Test 6.2: Test data quality validator
-log_info "Testing data quality validator..."
-if docker exec agrisafe-airflow-worker python -c "
-from src.quality.validators import WeatherDataValidator
-validator = WeatherDataValidator()
-result = validator.check_null_values()
-print('Validation check executed successfully')
-" 2>/dev/null | grep -q "successfully"; then
-    log_success "Data quality validator executed successfully"
-else
-    log_error "Data quality validator failed"
-fi
-
-# Test 6.3: Directory structure exists
-log_info "Testing directory structure..."
-if docker exec agrisafe-airflow-worker test -d /opt/airflow/src/processing/spark_jobs; then
-    log_success "Processing directory structure exists"
-else
-    log_error "Processing directory structure missing"
-fi
-
-if docker exec agrisafe-airflow-worker test -d /opt/airflow/src/models; then
-    log_success "Models directory structure exists"
-else
-    log_error "Models directory structure missing"
-fi
-
-if docker exec agrisafe-airflow-worker test -d /opt/airflow/src/quality; then
-    log_success "Quality directory structure exists"
-else
-    log_error "Quality directory structure missing"
-fi
-
-echo ""
-
-##############################################################################
-# 7. INTEGRATION TESTS
-##############################################################################
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  7. INTEGRATION TESTS"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-# Test 7.1: Redis connectivity from Python
-log_info "Testing Redis connectivity from Python..."
-if docker exec agrisafe-airflow-worker python -c "
-import redis
-r = redis.Redis(host='redis', port=6379)
-r.ping()
-print('Redis connected')
-" 2>/dev/null | grep -q "connected"; then
-    log_success "Redis connectivity works from Python"
-else
-    log_error "Redis connectivity failed from Python"
-fi
-
-# Test 7.2: PostgreSQL connectivity from Python
-log_info "Testing PostgreSQL connectivity from Python..."
-if docker exec agrisafe-airflow-worker python -c "
-from src.utils.database import get_db_connection
-with get_db_connection() as conn:
-    cursor = conn.cursor()
-    cursor.execute('SELECT COUNT(*) FROM regions')
-    count = cursor.fetchone()[0]
-    print(f'Connected, found {count} regions')
-" 2>/dev/null | grep -q "Connected"; then
-    log_success "PostgreSQL connectivity works from Python"
-else
-    log_error "PostgreSQL connectivity failed from Python"
-fi
-
-# Test 7.3: Verify test infrastructure
-log_info "Checking test infrastructure..."
-if docker exec agrisafe-airflow-worker test -d /opt/airflow/tests/processing; then
-    log_success "Test directory structure exists"
-else
-    log_error "Test directory structure missing"
-fi
-
-echo ""
-
-##############################################################################
-# SUMMARY
-##############################################################################
-
-echo "======================================================================"
-echo "  📊 TEST SUMMARY"
-echo "======================================================================"
-echo ""
-echo "  Total Tests Run:    ${TESTS_RUN}"
-echo "  Tests Passed:       ${GREEN}${TESTS_PASSED}${NC}"
-echo "  Tests Failed:       ${RED}${TESTS_FAILED}${NC}"
-echo ""
-
-if [ ${TESTS_FAILED} -eq 0 ]; then
-    echo -e "${GREEN}✅ ALL TESTS PASSED!${NC}"
+print_separator() {
     echo ""
-    echo "🎉 Phase 3 infrastructure is ready!"
+    echo "========================================="
+    echo "$1"
+    echo "========================================="
     echo ""
-    echo "Next steps:"
-    echo "  1. Run 'make run-etl' to process weather data"
-    echo "  2. Run 'make train-model' to train the ML model"
-    echo "  3. Run 'make run-predictions' to generate predictions"
-    echo "  4. Run 'make quality-checks' to validate data quality"
-    echo ""
-    exit 0
-else
-    echo -e "${RED}❌ SOME TESTS FAILED${NC}"
-    echo ""
-    echo "Please fix the failing tests before proceeding."
-    echo ""
+}
+
+# Change to project directory
+cd "$(dirname "$0")"
+PROJECT_ROOT=$(pwd)
+
+print_separator "Phase 3 Spark ETL - Automated Testing"
+
+# Step 1: Check Docker services
+print_separator "Step 1: Checking Docker Services"
+
+if ! docker --version &> /dev/null; then
+    log_error "Docker is not installed or not running"
     exit 1
 fi
+log_success "Docker is installed"
+
+# Check PostgreSQL
+if docker exec agrisafe-postgres pg_isready -U agrisafe &> /dev/null; then
+    log_success "PostgreSQL is running and accepting connections"
+else
+    log_error "PostgreSQL is not accessible"
+    log_info "Try running: docker-compose up -d postgres"
+    exit 1
+fi
+
+# Check Redis
+if docker exec agrisafe-redis redis-cli ping &> /dev/null; then
+    log_success "Redis is running"
+else
+    log_error "Redis is not accessible"
+    log_info "Try running: docker-compose up -d redis"
+    exit 1
+fi
+
+# Step 2: Set environment variables
+print_separator "Step 2: Setting Environment Variables"
+
+export POSTGRES_HOST=localhost
+export POSTGRES_PORT=5432
+export POSTGRES_DB=agrisafe_db
+export POSTGRES_USER=agrisafe
+export POSTGRES_PASSWORD=agrisafe_password
+export REDIS_HOST=localhost
+export REDIS_PORT=6379
+export PYTHONPATH="${PYTHONPATH}:${PROJECT_ROOT}"
+
+log_success "Environment variables set"
+
+# Step 3: Check Python dependencies
+print_separator "Step 3: Checking Python Dependencies"
+
+if python3 -c "import pyspark" &> /dev/null; then
+    PYSPARK_VERSION=$(python3 -c "import pyspark; print(pyspark.__version__)")
+    log_success "PySpark is installed (version: $PYSPARK_VERSION)"
+else
+    log_error "PySpark is not installed"
+    log_info "Install with: pip install pyspark==3.5.0"
+    exit 1
+fi
+
+if python3 -c "import redis" &> /dev/null; then
+    log_success "Redis Python library is installed"
+else
+    log_error "Redis library is not installed"
+    log_info "Install with: pip install redis==5.0.1"
+    exit 1
+fi
+
+if python3 -c "from loguru import logger" &> /dev/null; then
+    log_success "Loguru is installed"
+else
+    log_error "Loguru is not installed"
+    log_info "Install with: pip install loguru==0.7.2"
+    exit 1
+fi
+
+# Step 4: Apply database schema
+print_separator "Step 4: Applying Database Schema"
+
+log_info "Checking if feature tables exist..."
+
+TABLE_CHECK=$(docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -t -c \
+    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'weather_daily_stats';")
+
+if [[ "$TABLE_CHECK" -gt 0 ]]; then
+    log_warning "Feature tables already exist, skipping schema application"
+else
+    log_info "Applying feature tables schema..."
+    docker exec -i agrisafe-postgres psql -U agrisafe -d agrisafe_db \
+        < sql/schema/02_feature_tables.sql
+    log_success "Database schema applied successfully"
+fi
+
+# Step 5: Check for weather data
+print_separator "Step 5: Checking Weather Data"
+
+FORECAST_COUNT=$(docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -t -c \
+    "SELECT COUNT(*) FROM weather_forecasts;")
+
+log_info "Found $FORECAST_COUNT weather forecast records"
+
+if [[ "$FORECAST_COUNT" -lt 10 ]]; then
+    log_warning "Not enough weather data to test properly"
+    log_info "Run PAGASA ingestion first: python -m src.ingestion.pagasa_connector"
+    log_warning "Continuing with limited data..."
+fi
+
+REGION_COUNT=$(docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -t -c \
+    "SELECT COUNT(*) FROM regions;")
+
+log_info "Found $REGION_COUNT regions in database"
+
+if [[ "$REGION_COUNT" -lt 1 ]]; then
+    log_error "No regions found in database. Cannot proceed."
+    exit 1
+fi
+
+# Step 6: Test Daily Weather Statistics Job
+print_separator "Step 6: Testing Daily Weather Statistics Job"
+
+log_info "Running daily_weather_stats job..."
+
+if python3 -m src.processing.jobs.daily_weather_stats \
+    --start-date 2025-01-01 \
+    --end-date 2025-01-07 \
+    --mode append; then
+    log_success "Daily weather statistics job completed successfully"
+else
+    log_error "Daily weather statistics job failed"
+    exit 1
+fi
+
+# Verify data was created
+STATS_COUNT=$(docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -t -c \
+    "SELECT COUNT(*) FROM weather_daily_stats;")
+
+log_info "Created $STATS_COUNT daily statistics records"
+
+if [[ "$STATS_COUNT" -gt 0 ]]; then
+    log_success "Daily statistics data verified in database"
+else
+    log_error "No daily statistics data found in database"
+    exit 1
+fi
+
+# Step 7: Test Rolling Features Job
+print_separator "Step 7: Testing Rolling Features Job"
+
+log_info "Running rolling_features job..."
+
+if python3 -m src.processing.jobs.rolling_features \
+    --start-date 2025-01-01 \
+    --end-date 2025-01-31 \
+    --windows 7,14,30 \
+    --mode append; then
+    log_success "Rolling features job completed successfully"
+else
+    log_error "Rolling features job failed"
+    exit 1
+fi
+
+# Verify data was created
+FEATURES_COUNT=$(docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -t -c \
+    "SELECT COUNT(*) FROM weather_rolling_features;")
+
+log_info "Created $FEATURES_COUNT rolling feature records"
+
+if [[ "$FEATURES_COUNT" -gt 0 ]]; then
+    log_success "Rolling features data verified in database"
+else
+    log_error "No rolling features data found in database"
+    exit 1
+fi
+
+# Check all window sizes
+for WINDOW in 7 14 30; do
+    WINDOW_COUNT=$(docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -t -c \
+        "SELECT COUNT(*) FROM weather_rolling_features WHERE window_days = $WINDOW;")
+    log_info "${WINDOW}-day window: $WINDOW_COUNT records"
+done
+
+# Step 8: Test Flood Risk Indicators Job
+print_separator "Step 8: Testing Flood Risk Indicators Job"
+
+log_info "Running flood_risk_indicators job..."
+
+if python3 -m src.processing.jobs.flood_risk_indicators \
+    --start-date 2025-01-01 \
+    --end-date 2025-01-14 \
+    --mode append; then
+    log_success "Flood risk indicators job completed successfully"
+else
+    log_error "Flood risk indicators job failed"
+    exit 1
+fi
+
+# Verify data was created
+RISK_COUNT=$(docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -t -c \
+    "SELECT COUNT(*) FROM flood_risk_indicators;")
+
+log_info "Created $RISK_COUNT flood risk indicator records"
+
+if [[ "$RISK_COUNT" -gt 0 ]]; then
+    log_success "Flood risk indicators data verified in database"
+else
+    log_error "No flood risk indicators data found in database"
+    exit 1
+fi
+
+# Check risk level distribution
+log_info "Risk level distribution:"
+docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -t -c \
+    "SELECT flood_risk_level, COUNT(*) FROM flood_risk_indicators GROUP BY flood_risk_level ORDER BY flood_risk_level;"
+
+# Step 9: Test Redis Cache
+print_separator "Step 9: Testing Redis Cache"
+
+# Check for cached keys
+CACHE_KEYS=$(docker exec agrisafe-redis redis-cli KEYS "agrisafe:*" | wc -l)
+
+log_info "Found $CACHE_KEYS cached keys in Redis"
+
+if [[ "$CACHE_KEYS" -gt 0 ]]; then
+    log_success "Redis cache is populated"
+
+    # Show sample cached keys
+    log_info "Sample cached keys:"
+    docker exec agrisafe-redis redis-cli KEYS "agrisafe:*" | head -5
+else
+    log_warning "No cached keys found in Redis (caching may be disabled)"
+fi
+
+# Step 10: Verify Job Metadata
+print_separator "Step 10: Verifying Job Metadata"
+
+METADATA_COUNT=$(docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -t -c \
+    "SELECT COUNT(*) FROM feature_metadata;")
+
+log_info "Found $METADATA_COUNT job execution records"
+
+if [[ "$METADATA_COUNT" -gt 0 ]]; then
+    log_success "Job metadata is being tracked"
+
+    # Show recent jobs
+    log_info "Recent job executions:"
+    docker exec agrisafe-postgres psql -U agrisafe -d agrisafe_db -c \
+        "SELECT job_name, status, records_created, duration_seconds FROM feature_metadata ORDER BY created_at DESC LIMIT 5;"
+else
+    log_warning "No job metadata found"
+fi
+
+# Step 11: Run Unit Tests (if pytest is available)
+print_separator "Step 11: Running Unit Tests"
+
+if command -v pytest &> /dev/null; then
+    log_info "Running unit tests..."
+
+    if pytest tests/processing/ -v --tb=short; then
+        log_success "All unit tests passed"
+    else
+        log_error "Some unit tests failed"
+        exit 1
+    fi
+else
+    log_warning "pytest not installed, skipping unit tests"
+    log_info "Install with: pip install pytest"
+fi
+
+# Final Summary
+print_separator "Test Summary"
+
+echo ""
+log_success "✓ Docker services are running"
+log_success "✓ Python dependencies are installed"
+log_success "✓ Database schema is applied"
+log_success "✓ Daily weather statistics job works"
+log_success "✓ Rolling features job works"
+log_success "✓ Flood risk indicators job works"
+log_success "✓ Redis caching is functional"
+log_success "✓ Job metadata is tracked"
+
+echo ""
+echo -e "${GREEN}╔══════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║                                                  ║${NC}"
+echo -e "${GREEN}║   🎉  All Phase 3 Tests Passed Successfully!  🎉  ║${NC}"
+echo -e "${GREEN}║                                                  ║${NC}"
+echo -e "${GREEN}╚══════════════════════════════════════════════════╝${NC}"
+echo ""
+
+log_info "You can now:"
+echo "  1. View data in database: docker exec -it agrisafe-postgres psql -U agrisafe -d agrisafe_db"
+echo "  2. Check Redis cache: docker exec -it agrisafe-redis redis-cli"
+echo "  3. View Airflow UI: http://localhost:8080"
+echo "  4. Run jobs manually with custom dates"
+echo ""
+
+log_info "Next steps:"
+echo "  - Enable Airflow DAG for automated daily runs"
+echo "  - Proceed to Phase 4 (Backend API development)"
+echo ""

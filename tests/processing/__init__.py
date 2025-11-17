@@ -1,5 +1,1 @@
-"""
-Processing module tests
-
-Tests for weather data ETL and feature engineering
-"""
+"""Unit tests for PySpark processing jobs."""

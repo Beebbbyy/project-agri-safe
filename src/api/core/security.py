@@ -8,7 +8,13 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from src.api.config import settings
 
 # Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Configure bcrypt to truncate passwords at 72 bytes automatically
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__truncate_error=False,  # Don't raise error on long passwords
+    bcrypt__ident="2b"  # Use 2b variant to avoid wrap-around bugs
+)
 
 # HTTP Bearer token scheme
 security = HTTPBearer()

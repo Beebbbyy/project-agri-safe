@@ -46,7 +46,9 @@ async def list_plantings(
     if crop_type_id:
         filters.append(Planting.crop_type_id == crop_type_id)
     if status_filter:
-        filters.append(Planting.status.ilike(f"%{status_filter}%"))
+        # Use exact case-insensitive match to prevent LIKE wildcard injection
+        # Users should provide exact status values (e.g., "active", "harvested")
+        filters.append(Planting.status.ilike(status_filter))
 
     if filters:
         query = query.where(and_(*filters))
@@ -232,8 +234,6 @@ async def delete_planting(
 
     await db.delete(planting)
     await db.commit()
-
-    return None
 
 
 @router.get("/farm/{farm_id}", response_model=PlantingList)

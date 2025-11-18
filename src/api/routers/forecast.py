@@ -161,16 +161,21 @@ async def get_forecast_by_id(
     )
     daily_stats = stats_result.scalar_one_or_none()
 
-    # Get risk indicators for the same date
-    risk_result = await db.execute(
-        select(RegionRiskIndicators).where(
-            and_(
-                RegionRiskIndicators.region_id == forecast.region_id,
-                RegionRiskIndicators.indicator_date == forecast.forecast_date
-            )
-        ).order_by(desc(RegionRiskIndicators.created_at)).limit(1)
-    )
-    risk_indicators = risk_result.scalar_one_or_none()
+    # Get risk indicators for the same date (if table exists)
+    risk_indicators = None
+    try:
+        risk_result = await db.execute(
+            select(RegionRiskIndicators).where(
+                and_(
+                    RegionRiskIndicators.region_id == forecast.region_id,
+                    RegionRiskIndicators.indicator_date == forecast.forecast_date
+                )
+            ).order_by(desc(RegionRiskIndicators.created_at)).limit(1)
+        )
+        risk_indicators = risk_result.scalar_one_or_none()
+    except Exception:
+        # Table doesn't exist yet - gracefully continue without risk indicators
+        pass
 
     return ComprehensiveForecastResponse(
         forecast=DailyForecastResponse.from_orm(forecast),
@@ -327,23 +332,27 @@ async def get_region_forecast_summary(
     # Create a map of flood risks by date
     flood_risk_map = {fr.assessment_date: fr for fr in flood_risks}
 
-    # Get risk indicators for the period
-    risk_query = select(RegionRiskIndicators).where(
-        and_(
-            RegionRiskIndicators.region_id == region_id,
-            RegionRiskIndicators.indicator_date >= today,
-            RegionRiskIndicators.indicator_date < end_date
-        )
-    ).order_by(RegionRiskIndicators.indicator_date, desc(RegionRiskIndicators.created_at))
-
-    risk_result = await db.execute(risk_query)
-    all_risks = risk_result.scalars().all()
-
-    # Get unique risk indicators (most recent for each date)
+    # Get risk indicators for the period (if table exists)
     risk_map = {}
-    for risk in all_risks:
-        if risk.indicator_date not in risk_map:
-            risk_map[risk.indicator_date] = risk
+    try:
+        risk_query = select(RegionRiskIndicators).where(
+            and_(
+                RegionRiskIndicators.region_id == region_id,
+                RegionRiskIndicators.indicator_date >= today,
+                RegionRiskIndicators.indicator_date < end_date
+            )
+        ).order_by(RegionRiskIndicators.indicator_date, desc(RegionRiskIndicators.created_at))
+
+        risk_result = await db.execute(risk_query)
+        all_risks = risk_result.scalars().all()
+
+        # Get unique risk indicators (most recent for each date)
+        for risk in all_risks:
+            if risk.indicator_date not in risk_map:
+                risk_map[risk.indicator_date] = risk
+    except Exception:
+        # Table doesn't exist yet - continue without risk indicators
+        pass
 
     # Build daily forecasts with risk data
     daily_forecasts = []

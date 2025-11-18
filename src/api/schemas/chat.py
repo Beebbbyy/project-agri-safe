@@ -48,7 +48,7 @@ class ChatMessageResponse(BaseModel):
     conversation_id: UUID
     role: str
     content: str
-    metadata: Optional[Dict[str, Any]]
+    message_metadata: Optional[Dict[str, Any]] = Field(None, serialization_alias="metadata")
     token_count: Optional[int]
     model_used: Optional[str]
     created_at: datetime

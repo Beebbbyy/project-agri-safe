@@ -28,7 +28,7 @@ class ChatMessage(Base):
     conversation_id = Column(UUID(as_uuid=True), ForeignKey("chat_conversations.id", ondelete="CASCADE"), nullable=False, index=True)
     role = Column(String(20), nullable=False)
     content = Column(Text, nullable=False)
-    metadata = Column(JSONB)
+    message_metadata = Column("metadata", JSONB)  # Renamed from 'metadata' to avoid SQLAlchemy reserved attribute
     token_count = Column(Integer)
     model_used = Column(String(100))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)

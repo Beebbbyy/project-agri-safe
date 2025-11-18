@@ -14,10 +14,10 @@ class Settings(BaseSettings):
 
     # Database
     POSTGRES_USER: str = "agrisafe"
-    POSTGRES_PASSWORD: str = "agrisafe"
+    POSTGRES_PASSWORD: str = "agrisafe_password"
     POSTGRES_HOST: str = "postgres"
     POSTGRES_PORT: int = 5432
-    POSTGRES_DB: str = "agrisafe"
+    POSTGRES_DB: str = "agrisafe_db"
 
     @property
     def DATABASE_URL(self) -> str:

@@ -8,7 +8,7 @@ class UserCreate(BaseModel):
     """Schema for user registration"""
     email: EmailStr
     username: str = Field(..., min_length=3, max_length=100)
-    password: str = Field(..., min_length=8, max_length=100)
+    password: str = Field(..., min_length=8, max_length=72, description="Password must be 8-72 characters (bcrypt limit)")
     full_name: Optional[str] = Field(None, max_length=200)
 
 
@@ -42,7 +42,7 @@ class UserUpdate(BaseModel):
 class PasswordChange(BaseModel):
     """Schema for password change"""
     old_password: str
-    new_password: str = Field(..., min_length=8, max_length=100)
+    new_password: str = Field(..., min_length=8, max_length=72, description="Password must be 8-72 characters (bcrypt limit)")
 
 
 class TokenResponse(BaseModel):

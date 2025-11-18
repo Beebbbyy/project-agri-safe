@@ -1,8 +1,11 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
 from datetime import date, datetime
 from uuid import UUID
 from decimal import Decimal
+
+# Valid planting status values
+PlantingStatus = Literal["active", "harvested", "failed", "planned", "abandoned"]
 
 
 class PlantingCreate(BaseModel):
@@ -12,7 +15,7 @@ class PlantingCreate(BaseModel):
     planting_date: date
     expected_harvest_date: Optional[date] = None
     area_planted_hectares: Optional[Decimal] = Field(None, ge=0)
-    status: Optional[str] = Field(default="active", max_length=50)
+    status: Optional[PlantingStatus] = Field(default="active")
     notes: Optional[str] = None
 
 
@@ -21,7 +24,7 @@ class PlantingUpdate(BaseModel):
     expected_harvest_date: Optional[date] = None
     actual_harvest_date: Optional[date] = None
     area_planted_hectares: Optional[Decimal] = Field(None, ge=0)
-    status: Optional[str] = Field(None, max_length=50)
+    status: Optional[PlantingStatus] = None
     notes: Optional[str] = None
 
 

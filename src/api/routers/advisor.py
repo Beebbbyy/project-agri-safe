@@ -266,7 +266,7 @@ Current Planting Context:
         conversation_id=conversation_id,
         role="user",
         content=chat_request.message,
-        metadata=metadata
+        message_metadata=metadata
     )
     db.add(user_message)
 
@@ -280,7 +280,7 @@ Current Planting Context:
             role="assistant",
             content=ai_response,
             model_used=settings.LLM_MODEL,
-            metadata=metadata
+            message_metadata=metadata
         )
         db.add(assistant_message)
 

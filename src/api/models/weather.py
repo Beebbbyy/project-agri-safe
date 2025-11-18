@@ -57,26 +57,29 @@ class WeatherDailyStats(Base):
     region_id = Column(Integer, ForeignKey("regions.id", ondelete="CASCADE"), nullable=False, index=True)
     stat_date = Column(Date, nullable=False, index=True)
 
-    # Temperature metrics
-    temp_high_avg = Column(Numeric(5, 2))
-    temp_low_avg = Column(Numeric(5, 2))
-    temp_range = Column(Numeric(5, 2))
+    # Temperature statistics
+    temp_min = Column(Numeric(5, 2))
+    temp_max = Column(Numeric(5, 2))
+    temp_avg = Column(Numeric(5, 2))
+    temp_stddev = Column(Numeric(5, 2))
 
-    # Rainfall metrics
+    # Rainfall statistics
     rainfall_total = Column(Numeric(8, 2))
     rainfall_max = Column(Numeric(8, 2))
-    rainfall_min = Column(Numeric(8, 2))
+    rainfall_avg = Column(Numeric(8, 2))
 
-    # Wind metrics
-    wind_speed_max = Column(Numeric(5, 2))
-    wind_speed_avg = Column(Numeric(5, 2))
+    # Wind statistics
+    wind_speed_avg = Column(Numeric(6, 2))
+    wind_speed_max = Column(Numeric(6, 2))
 
-    # Weather condition
-    dominant_condition = Column(String(50))
+    # Humidity statistics
+    humidity_avg = Column(Numeric(5, 2))
+    humidity_min = Column(Numeric(5, 2))
+    humidity_max = Column(Numeric(5, 2))
 
     # Metadata
     forecast_count = Column(Integer)
-    data_quality_score = Column(Numeric(3, 2))
+    data_completeness = Column(Numeric(5, 2))
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

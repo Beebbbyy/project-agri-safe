@@ -89,7 +89,7 @@ services:
       - "8080:8080"
     command: >
       bash -c "pip install --no-cache-dir -r /opt/airflow/requirements.txt &&
-               airflow db migrate &&
+               airflow db init &&
                airflow users create --username $${_AIRFLOW_WWW_USER_USERNAME} --firstname Admin --lastname User --role Admin --email admin@example.com --password $${_AIRFLOW_WWW_USER_PASSWORD} || true &&
                airflow webserver"
     healthcheck:

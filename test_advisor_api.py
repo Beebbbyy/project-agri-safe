@@ -23,8 +23,31 @@ def print_response(response):
         print(response.text)
     print(f"Status Code: {response.status_code}")
 
+def check_api_running():
+    """Check if API server is running"""
+    print_section("Checking API server status")
+    try:
+        response = requests.get("http://localhost:8000/health", timeout=5)
+        print("✓ API server is running")
+        print_response(response)
+        return True
+    except requests.exceptions.ConnectionError:
+        print("✗ API server is not running!")
+        print("\nPlease start the API server first:")
+        print("  uvicorn src.api.main:app --reload")
+        print("\nOr using:")
+        print("  python -m src.api.main")
+        return False
+    except Exception as e:
+        print(f"✗ Error connecting to API: {e}")
+        return False
+
 def main():
     print_section("AgriSafe Advisor API Testing")
+
+    # Check if API is running
+    if not check_api_running():
+        sys.exit(1)
 
     # Step 1: Register (or skip if user exists)
     print_section("1. Registering test user")
@@ -38,8 +61,23 @@ def main():
             }
         )
         print_response(response)
+
+        if response.status_code == 500:
+            print("\n⚠️  Database error detected!")
+            print("\nLikely causes:")
+            print("  1. Database tables not initialized")
+            print("  2. Database connection issue")
+            print("\nSolution:")
+            print("  Run: python init_database.py")
+            print("\nThen make sure:")
+            print("  - Docker services are running: docker-compose up -d")
+            print("  - PostgreSQL is accessible: psql -h localhost -U agrisafe agrisafe_db")
+            sys.exit(1)
+        elif response.status_code == 400:
+            print("\n✓ User already exists (this is OK)")
     except Exception as e:
-        print(f"Registration note: {e} (user may already exist)")
+        print(f"❌ Registration error: {e}")
+        sys.exit(1)
 
     # Step 2: Login
     print_section("2. Logging in")

@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from sqlalchemy import text
 from src.api.core.database import engine, Base
 from src.api.models.user import User
-from src.api.models.chat import ChatSession, ChatMessage
+from src.api.models.chat import ChatConversation, ChatMessage
 
 
 async def init_database():

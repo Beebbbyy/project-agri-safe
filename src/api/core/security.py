@@ -15,13 +15,30 @@ security = HTTPBearer()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    """
+    Verify a password against a hash
+
+    Applies same 72-byte truncation as get_password_hash for consistency
+    """
+    # Truncate to 72 bytes to match hashing behavior
+    password_bytes = plain_password.encode('utf-8')[:72]
+    password_truncated = password_bytes.decode('utf-8', errors='ignore')
+    return pwd_context.verify(password_truncated, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password"""
-    return pwd_context.hash(password)
+    """
+    Hash a password using bcrypt
+
+    Note: bcrypt has a 72-byte limit. We truncate to 72 bytes to avoid errors.
+    This is a standard practice since password entropy beyond 72 bytes provides
+    no additional security with bcrypt.
+    """
+    # Truncate to 72 bytes to handle bcrypt's limitation
+    # This prevents errors with long passwords or multi-byte characters
+    password_bytes = password.encode('utf-8')[:72]
+    password_truncated = password_bytes.decode('utf-8', errors='ignore')
+    return pwd_context.hash(password_truncated)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

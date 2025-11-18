@@ -16,7 +16,23 @@ The Airflow metadata database (PostgreSQL) has an inconsistent or corrupted sche
 
 ### Solution
 
-#### Option 1: Reset Airflow Database Volume (Recommended)
+**✨ AUTO-FIX AVAILABLE (Latest Version):** As of the latest update, the Airflow webserver now includes an entrypoint script that automatically detects and fixes corrupted database states. Simply restart your containers:
+
+```bash
+docker-compose down
+docker-compose up
+```
+
+The webserver will automatically:
+1. Detect if the database is corrupted
+2. Reset the database if needed
+3. Initialize it with a clean schema
+4. Create the admin user
+5. Start the webserver
+
+If this doesn't work, try the manual options below:
+
+#### Option 1: Reset Airflow Database Volume (Manual)
 
 This will completely reset the Airflow metadata database. **Note: This will delete all Airflow DAG runs, task history, and user accounts.**
 

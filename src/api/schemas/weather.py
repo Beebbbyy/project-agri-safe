@@ -60,17 +60,20 @@ class WeatherDailyStatsResponse(BaseModel):
     id: uuid.UUID
     region_id: int
     stat_date: date
-    temp_high_avg: Optional[float] = None
-    temp_low_avg: Optional[float] = None
-    temp_range: Optional[float] = None
+    temp_min: Optional[float] = None
+    temp_max: Optional[float] = None
+    temp_avg: Optional[float] = None
+    temp_stddev: Optional[float] = None
     rainfall_total: Optional[float] = None
     rainfall_max: Optional[float] = None
-    rainfall_min: Optional[float] = None
-    wind_speed_max: Optional[float] = None
+    rainfall_avg: Optional[float] = None
     wind_speed_avg: Optional[float] = None
-    dominant_condition: Optional[str] = None
+    wind_speed_max: Optional[float] = None
+    humidity_avg: Optional[float] = None
+    humidity_min: Optional[float] = None
+    humidity_max: Optional[float] = None
     forecast_count: Optional[int] = None
-    data_quality_score: Optional[float] = None
+    data_completeness: Optional[float] = None
     created_at: datetime
 
     class Config:

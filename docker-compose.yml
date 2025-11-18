@@ -85,13 +85,10 @@ services:
       - ./data:/opt/airflow/data
       - ./src:/opt/airflow/src
       - ./requirements-airflow.txt:/opt/airflow/requirements.txt
+      - ./docker/airflow/entrypoint-webserver.sh:/entrypoint.sh
     ports:
       - "8080:8080"
-    command: >
-      bash -c "pip install --no-cache-dir -r /opt/airflow/requirements.txt &&
-               airflow db init &&
-               airflow users create --username $${_AIRFLOW_WWW_USER_USERNAME} --firstname Admin --lastname User --role Admin --email admin@example.com --password $${_AIRFLOW_WWW_USER_PASSWORD} || true &&
-               airflow webserver"
+    command: /entrypoint.sh
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
@@ -122,9 +119,8 @@ services:
       - ./data:/opt/airflow/data
       - ./src:/opt/airflow/src
       - ./requirements-airflow.txt:/opt/airflow/requirements.txt
-    command: >
-      bash -c "pip install --no-cache-dir -r /opt/airflow/requirements.txt &&
-               airflow scheduler"
+      - ./docker/airflow/entrypoint-scheduler.sh:/entrypoint.sh
+    command: /entrypoint.sh
     healthcheck:
       test: ["CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob"]
       interval: 30s
@@ -160,9 +156,8 @@ services:
       - ./data:/opt/airflow/data
       - ./src:/opt/airflow/src
       - ./requirements-airflow.txt:/opt/airflow/requirements.txt
-    command: >
-      bash -c "pip install --no-cache-dir -r /opt/airflow/requirements.txt &&
-               airflow celery worker"
+      - ./docker/airflow/entrypoint-worker.sh:/entrypoint.sh
+    command: /entrypoint.sh
     healthcheck:
       test: ["CMD", "airflow", "celery", "check"]
       interval: 30s

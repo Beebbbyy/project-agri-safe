@@ -59,8 +59,8 @@ python-dateutil==2.8.2
 pytz==2024.1
 
 # Orchestration (Airflow)
-apache-airflow==2.8.1
-apache-airflow-providers-postgres==5.10.0
+# Note: Airflow dependencies are in requirements-airflow.txt
+# to avoid conflicts with FastAPI/Spark containers
 
 # Development & Testing
 pytest==7.4.4

@@ -84,7 +84,7 @@ services:
       - ./airflow/plugins:/opt/airflow/plugins
       - ./data:/opt/airflow/data
       - ./src:/opt/airflow/src
-      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./requirements-airflow.txt:/opt/airflow/requirements.txt
     ports:
       - "8080:8080"
     command: >
@@ -96,7 +96,7 @@ services:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 10
     networks:
       - agrisafe-network
 
@@ -121,7 +121,7 @@ services:
       - ./airflow/plugins:/opt/airflow/plugins
       - ./data:/opt/airflow/data
       - ./src:/opt/airflow/src
-      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./requirements-airflow.txt:/opt/airflow/requirements.txt
     command: >
       bash -c "pip install --no-cache-dir -r /opt/airflow/requirements.txt &&
                airflow scheduler"
@@ -159,7 +159,7 @@ services:
       - ./airflow/plugins:/opt/airflow/plugins
       - ./data:/opt/airflow/data
       - ./src:/opt/airflow/src
-      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./requirements-airflow.txt:/opt/airflow/requirements.txt
     command: >
       bash -c "pip install --no-cache-dir -r /opt/airflow/requirements.txt &&
                airflow celery worker"

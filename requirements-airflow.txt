@@ -1,0 +1,32 @@
+# AgriSafe Airflow - Python Dependencies
+# This file contains only the dependencies needed for Airflow services
+# to avoid conflicts with the base Airflow 2.8.0 image
+
+# Database drivers (not included in base Airflow image)
+psycopg2-binary==2.9.9
+
+# Redis for Celery (compatible with Airflow 2.8)
+redis==5.0.1
+
+# Airflow providers
+apache-airflow-providers-postgres==5.10.0
+
+# Note: apache-airflow itself should NOT be installed as it's already
+# in the base image. Installing it can cause version conflicts.
+
+# Data processing libraries that Airflow DAGs might need
+# Using versions compatible with Airflow 2.8.0
+pandas==2.0.3
+numpy==1.24.4
+
+# Utilities
+python-dotenv==1.0.0
+python-dateutil==2.8.2
+pytz==2024.1
+
+# HTTP clients for external API calls in DAGs
+requests==2.31.0
+httpx==0.26.0
+
+# Logging
+loguru==0.7.2
